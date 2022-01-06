@@ -1,0 +1,46 @@
+version: "3.7"
+
+services:
+  alice:
+    image: jlesage/firefox
+    container_name: mitm_alice
+    hostname: alice
+    restart: always
+    volumes:
+      - /dev/shm:/dev/shm
+    ports:
+      - "5800:5800"
+    networks:
+      - mitm
+
+  bob:
+    image: aikain/simplehttpserver:0.1
+    container_name: mitm_bob
+    hostname: bob
+    restart: always
+    volumes:
+      - ./files/bob:/var/www
+    networks:
+      - mitm
+  
+  eve:
+    privileged: true
+    build: .
+    container_name: mitm_eve
+    hostname: eve
+    tty: true
+    volumes:
+      - ./files/eve:/root
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv4.conf.all.send_redirects=0
+    networks:
+      - mitm
+    command: bash -c "/root/add_iptables_rule.sh && sleep infinity"
+
+networks:
+    mitm:
+
+volumes:
+    https-portal-data:
